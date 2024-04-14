@@ -47,4 +47,53 @@ module CodebaseAnalyzer
       content.scan(/^\s*def\s/).size
     end
   end
+
+  class MetricsComparator
+    # Инициализация с двумя хэшами метрик для сравнения
+    def initialize(metrics1, metrics2)
+      @metrics1 = metrics1
+      @metrics2 = metrics2
+    end
+
+    # Сравнивает метрики и возвращает хэш с результатами
+    def compare
+      comparison_result = {}
+
+      # Перебор всех ключей в первом наборе метрик
+      @metrics1.each_key do |key|
+        value1 = @metrics1[key]
+        value2 = @metrics2[key] || 0  # Поддержка случаев, когда во втором наборе отсутствует ключ
+        comparison_result[key] = {
+          old: value1,
+          new: value2,
+          difference: value2 - value1
+        }
+      end
+
+      # Проверка на новые ключи во втором наборе метрик
+      @metrics2.each_key do |key|
+        next if comparison_result.key?(key)  # Пропустить ключи, которые уже были обработаны
+
+        value1 = @metrics1[key] || 0  # Поддержка случаев, когда в первом наборе отсутствует ключ
+        value2 = @metrics2[key]
+        comparison_result[key] = {
+          old: value1,
+          new: value2,
+          difference: value2 - value1
+        }
+      end
+
+      comparison_result
+    end
+
+    # Форматирование результатов сравнения в читабельный формат
+    def format_comparison(comparison_results)
+      comparison_results.map do |key, values|
+        "#{key.to_s.capitalize}:\n" \
+          "  Previous: #{values[:old]}\n" \
+          "  Current: #{values[:new]}\n" \
+          "  Difference: #{values[:difference]}\n\n"
+      end.join
+    end
+  end
 end
