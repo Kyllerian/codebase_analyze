@@ -89,7 +89,8 @@ module CodebaseAnalyzer
     # Форматирование результатов сравнения в читабельный формат
     def format_comparison(comparison_results)
       comparison_results.map do |key, values|
-        "#{key.to_s.capitalize}:\n" \
+        formatted_key = key.to_s.gsub('_', ' ').capitalize  # Заменяем подчеркивания на пробелы и делаем первую букву заглавной
+        "#{formatted_key}:\n" \
           "  Previous: #{values[:old]}\n" \
           "  Current: #{values[:new]}\n" \
           "  Difference: #{values[:difference]}\n\n"
