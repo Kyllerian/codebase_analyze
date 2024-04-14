@@ -34,4 +34,4 @@ cd codebase_analyzer
 bundle exec rspec spec/analyzer_spec.rb   
 bundle exec rspec spec/metrics_comparator_spec.rb
 ```
-дописывается))
+дописывается)))
