@@ -4,47 +4,71 @@ require 'find'
 
 module CodebaseAnalyzer
   class Analyzer
-    SUPPORTED_EXTENSIONS = ['.rb', '.js']  # Расширения файлов для анализа
+    # Определение массива поддерживаемых расширений файлов для языков Ruby, JavaScript, Python, Java и Kotlin.
+    SUPPORTED_EXTENSIONS = ['.rb', '.js', '.py', '.java', '.kt']
 
+    # Конструктор класса инициализирует экземпляр с заданной директорией и нулевыми начальными значениями метрик.
     def initialize(directory)
-      @directory = directory
-      @results = {
-        total_files: 0,
-        total_classes: 0,
-        total_methods: 0,
-        total_lines: 0
+      @directory = directory  # Директория для анализа
+      @results = {            # Хэш для хранения результатов анализа
+                              total_files: 0,
+                              total_classes: 0,
+                              total_methods: 0,
+                              total_lines: 0
       }
     end
 
+    # Метод analyze проводит анализ файлов в указанной директории.
     def analyze
+      # Проверка существования директории; если директория не существует, выбрасывается исключение.
       raise "Directory does not exist" unless Dir.exist?(@directory)
 
+      # Проход по всем файлам в директории с использованием библиотеки Find.
       Find.find(@directory) do |path|
-        next unless File.file?(path)
-        analyze_file(path) if SUPPORTED_EXTENSIONS.include?(File.extname(path))
+        next unless File.file?(path)  # Пропускаем, если текущий путь не файл
+        extension = File.extname(path)  # Получаем расширение файла
+        # Анализируем файл, если его расширение поддерживается
+        analyze_file(path, extension) if SUPPORTED_EXTENSIONS.include?(extension)
       end
 
-      @results
+      @results  # Возвращаем собранные метрики
     end
 
     private
 
-    def analyze_file(path)
-      content = File.read(path)
-      @results[:total_files] += 1
-      @results[:total_lines] += content.lines.count
-      @results[:total_classes] += count_classes(content)
-      @results[:total_methods] += count_methods(content)
+    # Метод analyze_file читает файл и обновляет метрики.
+    def analyze_file(path, extension)
+      content = File.read(path)  # Чтение содержимого файла
+      @results[:total_files] += 1  # Увеличиваем счетчик файлов
+      @results[:total_lines] += content.lines.count  # Подсчитываем строки
+      @results[:total_classes] += count_classes(content, extension)  # Подсчитываем классы
+      @results[:total_methods] += count_methods(content, extension)  # Подсчитываем методы
     end
 
-    def count_classes(content)
-      # Пример простого подсчета классов в Ruby
-      content.scan(/^\s*class\s/).size
+    # Метод count_classes возвращает количество классов в зависимости от языка программирования.
+    def count_classes(content, extension)
+      case extension
+      when '.rb', '.py'  # Для Ruby и Python классы начинаются с ключевого слова class.
+        content.scan(/^\s*class\s/).size
+      when '.java', '.kt'  # Для Java и Kotlin классы могут начинаться с модификаторов доступа.
+        content.scan(/^\s*public\s+class\s/).size + content.scan(/^\s*class\s/).size
+      else
+        0
+      end
     end
 
-    def count_methods(content)
-      # Пример подсчета методов в Ruby
-      content.scan(/^\s*def\s/).size
+    # Метод count_methods возвращает количество методов в зависимости от языка программирования.
+    def count_methods(content, extension)
+      case extension
+      when '.rb'  # Для Ruby методы начинаются с def.
+        content.scan(/^\s*def\s/).size
+      when '.py'  # То же для Python.
+        content.scan(/^\s*def\s/).size
+      when '.java', '.kt'  # Для Java и Kotlin методы могут начинаться с модификаторов доступа и включать тип возвращаемого значения.
+        content.scan(/^\s*public\s+\S+\s+\S+\(/).size + content.scan(/^\s*private\s+\S+\s+\S+\(/).size
+      else
+        0
+      end
     end
   end
 
